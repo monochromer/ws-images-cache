@@ -24,7 +24,8 @@ jobs:
         with:
           path: .cache/@11ty/_images
           enableCrossOsArchive: true
-          key: images-${{ hashFiles('src/articles/**/*.png) }}
+
+          key: images-${{ hashFiles('src/articles/**/*.png') }}
 
       - name: check cache
         if: steps.cache.outputs.cache-hit != 'true'
