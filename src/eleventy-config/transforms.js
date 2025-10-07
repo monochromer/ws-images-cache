@@ -1,4 +1,5 @@
 import path from 'node:path';
+import fs from 'node:fs';
 import os from 'node:os';
 import htmlmin from 'html-minifier-terser';
 import minifyXml from 'minify-xml';
@@ -11,11 +12,11 @@ const isProdMode = process.env.NODE_ENV === 'production';
 
 async function processImage({ imageElement, inputPath, options, attributes }) {
     const imageStats = await Image(inputPath, {
-        filenameFormat: (hash, src, width, format) => {
-            const extension = path.extname(src);
-            const name = path.basename(src, extension);
-            return `${hash}-${name}-${width}.${format}`;
-        },
+        // filenameFormat: (hash, src, width, format) => {
+        //     const extension = path.extname(src);
+        //     const name = path.basename(src, extension);
+        //     return `${hash}-${name}-${width}.${format}`;
+        // },
         ...options,
     });
 
@@ -67,10 +68,12 @@ export default function(eleventyConfig) {
                     widths: ['auto', 600, 1200, 2400],
                     // `sharp`, на данный момент, не поддерживает анимированный avif
                     formats: isProdMode && !isGif
-                        ? ['svg', 'avif', 'webp', 'auto']
+                        // ? ['svg', 'avif', 'webp', 'auto']
+                        ? ['svg', 'webp', 'auto']
                         : ['svg', 'webp', 'auto'],
-                    outputDir: outputArticleImagesFolder,
-                    urlPath: 'images/',
+                    // outputDir: outputArticleImagesFolder,
+                    outputDir: '.cache/@11ty/_images',
+                    urlPath: '/_images/',
                     svgShortCircuit: true,
                     sharpOptions: {
                         animated: true,
@@ -122,16 +125,27 @@ export default function(eleventyConfig) {
                             return [entry, entry * 2];
                         }),
                     formats: isProdMode
-                        ? ['svg', 'avif', 'webp', 'auto']
+                        // ? ['svg', 'avif', 'webp', 'auto']
+                        ? ['svg', 'webp', 'auto']
                         : ['svg', 'webp', 'auto'],
-                    outputDir: avatarsOutputFolder,
-                    urlPath: image.src.split('/').slice(0, -1).join('/'),
+                    // outputDir: avatarsOutputFolder,
+                    // urlPath: image.src.split('/').slice(0, -1).join('/'),
+                    outputDir: '.cache/@11ty/_images',
+                    urlPath: '/_images/',
                     svgShortCircuit: true,
                 },
             });
         }));
 
         return document.toString();
+    });
+
+    eleventyConfig.on('eleventy.after', () => {
+        const from = '.cache/@11ty/_images/';
+        const to = path.join(eleventyConfig.directories.output, '/_images/');
+        fs.cpSync(from, to, {
+            recursive: true
+        });
     });
 
     eleventyConfig.addTransform('lazyYouTube', (content, outputPath) => {
